@@ -832,7 +832,7 @@ function manualUnlock(){
 // verifyToken: manual fallback — user pastes their till token directly
 async function verifyToken(token){
   try{
-    const res = await fetch(`https://till.defimagic.io/check?token=${encodeURIComponent(token)}&product=henparty`);
+    const res = await fetch(`https://orchard.defimagic.io/api/till/check?token=${encodeURIComponent(token)}&product=henparty`);
     if(res.ok){
       localStorage.setItem('till_henparty', token);
       state.paid = true;
@@ -849,7 +849,7 @@ async function verifyToken(token){
 // checkToken: silent background check on load — revokes optimistic paid state if till says invalid
 async function checkToken(token){
   try{
-    const res = await fetch(`https://till.defimagic.io/check?token=${encodeURIComponent(token)}&product=henparty`);
+    const res = await fetch(`https://orchard.defimagic.io/api/till/check?token=${encodeURIComponent(token)}&product=henparty`);
     if(!res.ok){
       localStorage.removeItem('till_henparty');
       state.paid = false;
