@@ -330,8 +330,8 @@ footer{
       <li>Scavenger Hunt — 30 photo missions, night-out + at-home variants</li>
       <li>Printable PDF — download the full pack as a PDF</li>
     </ul>
-    <a href="https://till.defimagic.io/buy/henparty" id="payment-link" class="btn gold" onclick="recordPaymentAttempt()">Pay £6.99 — Unlock Now</a>
-    <p style="text-align:center;font-size:0.8rem;color:var(--muted);margin-top:12px;">Secure payment · You'll be redirected back with your unlock link</p>
+    <a href="https://buy.stripe.com/aFa9ATbNd202egC1r12gp0f" id="payment-link" class="btn gold" onclick="recordPaymentAttempt()">Pay £6.99 — Unlock Now</a>
+    <p style="text-align:center;font-size:0.8rem;color:var(--muted);margin-top:12px;">Secure payment · Stripe checkout · Instant unlock</p>
 
     <div class="token-form">
       <label>Already paid? Enter your token below:</label>
@@ -663,11 +663,11 @@ let state = {
 // ==================== INIT ====================
 
 function init(){
-  // Check stored session
-  const token = localStorage.getItem('henparty_token');
-  const tokenExp = localStorage.getItem('henparty_exp');
-  if(token && tokenExp && Date.now() < parseInt(tokenExp)){
-    state.paid = true;
+  // Check stored till token (till_henparty = session_id.hmac set by unlock.html)
+  const tillToken = localStorage.getItem('till_henparty');
+  if(tillToken){
+    state.paid = true; // optimistic — checkToken runs async and revokes if invalid
+    checkToken(tillToken);
   }
 
   // Restore ZP preference
@@ -690,10 +690,10 @@ function init(){
     state.scores = p.scores || {};
   }catch(e){}
 
-  // Check URL for token
+  // If Stripe somehow redirected here with session_id, forward to unlock.html
   const params = new URLSearchParams(window.location.search);
-  const urlToken = params.get('token');
-  if(urlToken){ verifyToken(urlToken); return; }
+  const sessionId = params.get('session_id');
+  if(sessionId){ window.location.href = '/unlock.html?session_id=' + encodeURIComponent(sessionId); return; }
 
   // Check if age gate already passed
   if(localStorage.getItem('henparty_age') === '1'){
@@ -829,33 +829,36 @@ function manualUnlock(){
   verifyToken(token);
 }
 
+// verifyToken: manual fallback — user pastes their till token directly
 async function verifyToken(token){
   try{
-    const res = await fetch(`https://till.defimagic.io/verify?token=${encodeURIComponent(token)}&product=henparty`);
-    if(!res.ok) throw new Error('not ok');
-    const data = await res.json();
-    if(data && data.valid){
-      const exp = Date.now() + 48*60*60*1000;
-      localStorage.setItem('henparty_token', token);
-      localStorage.setItem('henparty_exp', exp.toString());
+    const res = await fetch(`https://till.defimagic.io/check?token=${encodeURIComponent(token)}&product=henparty`);
+    if(res.ok){
+      localStorage.setItem('till_henparty', token);
       state.paid = true;
       updateHub();
       showScreen('screen-hub');
     } else {
-      showTokenError('Token not recognised. Check the link you received after payment.');
+      showTokenError('Token not recognised. Check the link in your payment confirmation email.');
     }
   } catch(e){
-    // Till not yet live — check for a dev override
-    if(token === localStorage.getItem('henparty_dev_key')){
-      const exp = Date.now() + 48*60*60*1000;
-      localStorage.setItem('henparty_token', token);
-      localStorage.setItem('henparty_exp', exp.toString());
-      state.paid = true;
+    showTokenError('Could not reach the payment server. If you paid, please contact dan.cohen@defimagic.io with your order details.');
+  }
+}
+
+// checkToken: silent background check on load — revokes optimistic paid state if till says invalid
+async function checkToken(token){
+  try{
+    const res = await fetch(`https://till.defimagic.io/check?token=${encodeURIComponent(token)}&product=henparty`);
+    if(!res.ok){
+      localStorage.removeItem('till_henparty');
+      state.paid = false;
       updateHub();
-      showScreen('screen-hub');
-    } else {
-      showTokenError('Could not reach the payment server. If you paid, please contact dan.cohen@defimagic.io with your order details.');
+      if(localStorage.getItem('henparty_age') === '1') showScreen('screen-unlock');
     }
+    // 200 = valid, keep paid state
+  } catch(e){
+    // till unreachable — keep optimistic paid state; token was verified at purchase time
   }
 }
 

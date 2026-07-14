@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Confirming your purchase — HENPARTY</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#1a0a1e;color:#f0e6f6;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;text-align:center}
+    .card{max-width:420px;width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,75,140,0.3);border-radius:16px;padding:40px 28px}
+    h1{font-size:1.4rem;font-weight:700;margin-bottom:12px;color:#ff7eb3}
+    p{font-size:0.95rem;color:#c9b8d4;line-height:1.6;margin-bottom:16px}
+    .spinner{width:36px;height:36px;border:3px solid rgba(255,126,179,0.2);border-top-color:#ff7eb3;border-radius:50%;animation:spin 0.8s linear infinite;margin:20px auto}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    a{color:#ff7eb3}
+    .hidden{display:none}
+    .error-box{background:rgba(255,75,75,0.1);border:1px solid rgba(255,75,75,0.3);border-radius:8px;padding:16px;margin-top:16px}
+    .retry-btn{display:inline-block;margin-top:16px;padding:10px 24px;background:#ff4b8c;color:#fff;border:none;border-radius:8px;font-size:0.9rem;font-weight:600;cursor:pointer;text-decoration:none}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div id="state-confirming">
+      <h1>🥂 Confirming your purchase…</h1>
+      <div class="spinner"></div>
+      <p>Hang tight — this usually takes 2–3 seconds.</p>
+    </div>
+    <div id="state-success" class="hidden">
+      <h1>✅ Unlocked!</h1>
+      <p>Redirecting you to HENPARTY now…</p>
+    </div>
+    <div id="state-error" class="hidden">
+      <h1>⏳ Still confirming…</h1>
+      <div class="error-box">
+        <p>We couldn't reach the confirmation server right now. Your payment went through — this is a temporary delay.</p>
+        <p><strong>What to do:</strong><br>
+          Tap <strong>Retry</strong> in a moment, or come back to this page using the link in your payment confirmation email.
+        </p>
+        <p>If this persists, email <a href="mailto:dan.cohen@defimagic.io">dan.cohen@defimagic.io</a> with your Stripe receipt and we'll unlock you within the hour.</p>
+      </div>
+      <button class="retry-btn" onclick="attemptVerify()">Retry</button>
+    </div>
+    <div id="state-no-session" class="hidden">
+      <h1>🔗 Link expired or invalid</h1>
+      <p>This unlock link is missing the session ID. If you paid, check the link in your Stripe confirmation email.</p>
+      <p>Need help? <a href="mailto:dan.cohen@defimagic.io">dan.cohen@defimagic.io</a></p>
+      <a class="retry-btn" href="/">Back to HENPARTY</a>
+    </div>
+  </div>
+
+  <script>
+    (function(){
+      var TILL_BASE = 'https://till.defimagic.io';
+      var PRODUCT   = 'henparty';
+      var TOKEN_KEY = 'till_henparty';
+
+      function show(id){
+        ['state-confirming','state-success','state-error','state-no-session'].forEach(function(s){
+          document.getElementById(s).className = s === id ? '' : 'hidden';
+        });
+      }
+
+      var params = new URLSearchParams(window.location.search);
+      var sessionId = params.get('session_id');
+
+      if(!sessionId){
+        // Already have a stored token from a previous successful verify — just redirect
+        var existing = localStorage.getItem(TOKEN_KEY);
+        if(existing){
+          show('state-success');
+          window.location.href = '/';
+          return;
+        }
+        show('state-no-session');
+        return;
+      }
+
+      function attemptVerify(){
+        show('state-confirming');
+        fetch(TILL_BASE + '/verify?session_id=' + encodeURIComponent(sessionId) + '&product=' + PRODUCT)
+          .then(function(res){
+            if(!res.ok) throw new Error('bad-status-' + res.status);
+            return res.json();
+          })
+          .then(function(data){
+            if(data && data.ok && data.token){
+              localStorage.setItem(TOKEN_KEY, data.token);
+              show('state-success');
+              window.location.href = '/';
+            } else {
+              // Unexpected response shape — treat as transient error
+              show('state-error');
+            }
+          })
+          .catch(function(){
+            // till unreachable — show graceful pending state
+            show('state-error');
+          });
+      }
+
+      window.attemptVerify = attemptVerify;
+      attemptVerify();
+    })();
+  </script>
+</body>
+</html>
