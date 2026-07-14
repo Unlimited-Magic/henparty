@@ -1,0 +1,1381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>HENPARTY — Bachelorette Games. No Printer. No Install.</title>
+<meta name="description" content="Bachelorette party games that run in your browser. Bride Trivia, Dare Wheel, Drink If, Scavenger Hunt. No printer. No app download. $6.99.">
+<meta property="og:title" content="HENPARTY 🥂 Play on Your Phone">
+<meta property="og:description" content="Bachelorette games that run in your browser. Fill in the bride's details, share one link, play tonight.">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#1A0A2E">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --pink:#FF4B8C;
+  --gold:#F5C842;
+  --purple:#1A0A2E;
+  --purple2:#2D0F4E;
+  --text:#fff;
+  --muted:rgba(255,255,255,0.6);
+  --card:rgba(255,255,255,0.08);
+  --card-border:rgba(255,255,255,0.15);
+  --radius:16px;
+  --btn-h:60px;
+}
+html{font-size:16px;scroll-behavior:smooth;}
+body{
+  background:var(--purple);
+  color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+  min-height:100vh;
+  overflow-x:hidden;
+  -webkit-tap-highlight-color:transparent;
+}
+.screen{display:none;min-height:100vh;flex-direction:column;}
+.screen.active{display:flex;}
+.top-bar{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:16px 20px;gap:12px;
+  border-bottom:1px solid var(--card-border);
+  background:rgba(26,10,46,0.9);
+  position:sticky;top:0;z-index:10;
+  backdrop-filter:blur(8px);
+}
+.top-bar .logo{font-size:1.3rem;font-weight:900;letter-spacing:0.04em;color:var(--pink);}
+.toggle-row{display:flex;align-items:center;gap:8px;font-size:0.8rem;color:var(--muted);}
+.toggle{position:relative;display:inline-flex;width:44px;height:24px;}
+.toggle input{opacity:0;width:0;height:0;}
+.slider{
+  position:absolute;inset:0;background:#444;border-radius:24px;cursor:pointer;
+  transition:background 0.2s;
+}
+.slider::before{
+  content:'';position:absolute;height:18px;width:18px;left:3px;bottom:3px;
+  background:white;border-radius:50%;transition:transform 0.2s;
+}
+input:checked+.slider{background:var(--pink);}
+input:checked+.slider::before{transform:translateX(20px);}
+.content{flex:1;padding:20px;max-width:520px;margin:0 auto;width:100%;}
+h1{font-size:2.2rem;font-weight:900;line-height:1.1;margin-bottom:8px;}
+h2{font-size:1.5rem;font-weight:800;margin-bottom:16px;}
+.sub{color:var(--muted);font-size:0.95rem;line-height:1.5;margin-bottom:24px;}
+.btn{
+  display:block;width:100%;padding:0 20px;height:var(--btn-h);
+  background:var(--pink);color:#fff;border:none;border-radius:var(--radius);
+  font-size:1.1rem;font-weight:800;cursor:pointer;
+  transition:transform 0.1s,opacity 0.1s;
+  text-align:center;line-height:var(--btn-h);text-decoration:none;
+  letter-spacing:0.02em;
+}
+.btn:active{transform:scale(0.97);}
+.btn.gold{background:var(--gold);color:#1A0A2E;}
+.btn.outline{background:transparent;border:2px solid var(--card-border);color:var(--text);}
+.btn.sm{height:48px;font-size:0.95rem;line-height:48px;}
+.btn-row{display:flex;flex-direction:column;gap:12px;margin-top:20px;}
+.card{
+  background:var(--card);border:1px solid var(--card-border);
+  border-radius:var(--radius);padding:20px;margin-bottom:16px;
+}
+.card h3{font-size:1.1rem;font-weight:800;margin-bottom:6px;}
+.card p{font-size:0.9rem;color:var(--muted);line-height:1.5;}
+.badge{
+  display:inline-block;padding:3px 10px;border-radius:20px;
+  font-size:0.75rem;font-weight:700;letter-spacing:0.05em;
+  margin-bottom:8px;
+}
+.badge.free{background:rgba(245,200,66,0.2);color:var(--gold);}
+.badge.paid{background:rgba(255,75,140,0.2);color:var(--pink);}
+.big-prompt{
+  font-size:1.6rem;font-weight:800;line-height:1.3;
+  text-align:center;padding:32px 24px;
+  background:var(--purple2);border-radius:var(--radius);
+  min-height:180px;display:flex;align-items:center;justify-content:center;
+  margin-bottom:24px;
+}
+.progress{color:var(--muted);font-size:0.85rem;text-align:center;margin-bottom:16px;}
+.nav-btns{display:flex;gap:12px;}
+.nav-btns .btn{flex:1;font-size:1rem;}
+
+/* Wheel */
+.wheel-wrap{position:relative;width:280px;height:280px;margin:0 auto 24px;}
+canvas#wheel{width:280px;height:280px;}
+.wheel-pointer{
+  position:absolute;top:-12px;left:50%;transform:translateX(-50%);
+  width:0;height:0;
+  border-left:12px solid transparent;
+  border-right:12px solid transparent;
+  border-top:28px solid var(--gold);
+  filter:drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+}
+.dare-result{
+  font-size:1.4rem;font-weight:800;line-height:1.3;
+  text-align:center;padding:28px 20px;
+  background:var(--purple2);border-radius:var(--radius);
+  margin-bottom:24px;min-height:120px;
+  display:flex;align-items:center;justify-content:center;
+}
+.heat-row{display:flex;gap:10px;margin-bottom:20px;}
+.heat-btn{
+  flex:1;padding:10px;border-radius:10px;border:2px solid var(--card-border);
+  background:transparent;color:var(--muted);font-weight:700;font-size:0.9rem;cursor:pointer;
+  transition:all 0.2s;
+}
+.heat-btn.active{border-color:var(--pink);background:rgba(255,75,140,0.15);color:var(--text);}
+
+/* Scavenger */
+.scav-item{
+  display:flex;align-items:flex-start;gap:14px;padding:14px 0;
+  border-bottom:1px solid var(--card-border);cursor:pointer;
+}
+.scav-item:last-child{border-bottom:none;}
+.scav-check{
+  width:28px;height:28px;min-width:28px;border-radius:8px;
+  border:2px solid var(--card-border);
+  display:flex;align-items:center;justify-content:center;
+  font-size:1rem;transition:all 0.15s;margin-top:2px;
+}
+.scav-check.done{background:var(--pink);border-color:var(--pink);}
+.scav-text{font-size:1rem;line-height:1.4;flex:1;}
+.scav-done .scav-text{text-decoration:line-through;color:var(--muted);}
+.scav-count{text-align:center;font-size:1.1rem;font-weight:800;margin-bottom:20px;color:var(--gold);}
+
+/* Trivia */
+.trivia-q{
+  font-size:1.3rem;font-weight:800;text-align:center;
+  padding:28px 20px;background:var(--purple2);border-radius:var(--radius);
+  margin-bottom:16px;line-height:1.3;
+}
+.trivia-players{display:flex;flex-direction:column;gap:8px;margin-bottom:20px;}
+.player-row{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:10px 14px;background:var(--card);border-radius:10px;
+}
+.player-name{font-weight:700;font-size:1rem;}
+.player-score{font-size:1rem;color:var(--gold);font-weight:800;}
+.score-btn{
+  display:flex;gap:6px;
+}
+.score-btn button{
+  width:36px;height:36px;border-radius:8px;border:none;cursor:pointer;
+  font-size:1.1rem;font-weight:800;
+}
+.score-btn .plus{background:var(--pink);color:#fff;}
+.score-btn .minus{background:var(--card);color:var(--text);border:1px solid var(--card-border);}
+.answer-reveal{
+  background:rgba(245,200,66,0.15);border:1px solid var(--gold);
+  border-radius:var(--radius);padding:16px 20px;margin-bottom:20px;
+  font-size:1rem;font-weight:600;color:var(--gold);
+}
+.answer-reveal strong{display:block;font-size:0.8rem;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:4px;opacity:0.7;}
+
+/* Setup */
+.setup-q{margin-bottom:20px;}
+.setup-q label{display:block;font-size:0.85rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--muted);margin-bottom:6px;}
+.setup-q input,.setup-q textarea{
+  width:100%;padding:14px 16px;background:var(--card);
+  border:1px solid var(--card-border);border-radius:12px;
+  color:var(--text);font-size:1rem;font-family:inherit;
+  outline:none;resize:vertical;
+}
+.setup-q input:focus,.setup-q textarea:focus{border-color:var(--pink);}
+.setup-q .hint{font-size:0.8rem;color:var(--muted);margin-top:4px;}
+.setup-progress{
+  display:flex;gap:4px;margin-bottom:24px;
+}
+.setup-progress span{
+  flex:1;height:4px;background:var(--card-border);border-radius:2px;
+}
+.setup-progress span.done{background:var(--pink);}
+.setup-progress span.current{background:var(--gold);}
+
+/* Locked */
+.lock-icon{font-size:3rem;text-align:center;margin-bottom:16px;}
+.price-tag{
+  font-size:2.5rem;font-weight:900;color:var(--pink);
+  text-align:center;margin-bottom:8px;
+}
+.price-sub{text-align:center;color:var(--muted);font-size:0.9rem;margin-bottom:28px;}
+.feature-list{list-style:none;margin-bottom:24px;}
+.feature-list li{
+  padding:10px 0;border-bottom:1px solid var(--card-border);
+  font-size:0.95rem;display:flex;align-items:center;gap:12px;
+}
+.feature-list li::before{content:'✓';color:var(--pink);font-weight:900;font-size:1.1rem;}
+
+/* Age gate */
+#screen-agegate{
+  background:var(--purple);justify-content:center;align-items:center;
+  position:fixed;inset:0;z-index:100;
+}
+.agegate-inner{max-width:360px;width:90%;text-align:center;padding:40px 20px;}
+.agegate-inner h1{font-size:2rem;margin-bottom:16px;}
+.agegate-inner p{color:var(--muted);font-size:0.95rem;line-height:1.6;margin-bottom:32px;}
+
+/* Footer */
+footer{
+  padding:20px;text-align:center;font-size:0.75rem;color:var(--muted);
+  border-top:1px solid var(--card-border);line-height:1.8;
+}
+
+/* PDF loading */
+.pdf-loading{text-align:center;padding:40px;color:var(--muted);}
+
+/* Animations */
+@keyframes fade-in{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:none;}}
+.fade-in{animation:fade-in 0.25s ease;}
+@keyframes spin-done{0%{transform:scale(0.8);opacity:0;}100%{transform:scale(1);opacity:1;}}
+.spin-done{animation:spin-done 0.3s ease;}
+
+/* Unlock token input */
+.token-form{margin-top:24px;}
+.token-form label{font-size:0.85rem;color:var(--muted);display:block;margin-bottom:8px;}
+.token-form input{
+  width:100%;padding:14px;background:var(--card);border:1px solid var(--card-border);
+  border-radius:12px;color:var(--text);font-size:0.95rem;margin-bottom:12px;font-family:monospace;
+}
+.token-error{color:#ff6b6b;font-size:0.85rem;margin-bottom:12px;display:none;}
+</style>
+</head>
+<body>
+
+<!-- AGE GATE -->
+<div id="screen-agegate" class="screen active">
+  <div class="agegate-inner fade-in">
+    <div style="font-size:3rem;margin-bottom:16px;">🥂</div>
+    <h1>HENPARTY</h1>
+    <p>Bachelorette games that run in your browser.<br>No printer. No install. Just fun.</p>
+    <p style="margin-bottom:32px;">This site contains adult humour intended for people 18 and over.</p>
+    <button class="btn gold" onclick="confirmAge()">I'm 18 or older — Let's Go</button>
+    <p style="margin-top:16px;font-size:0.75rem;color:rgba(255,255,255,0.3);">By entering you confirm you are 18+.</p>
+  </div>
+</div>
+
+<!-- HUB -->
+<div id="screen-hub" class="screen">
+  <div class="top-bar">
+    <span class="logo">🥂 HENPARTY</span>
+    <div class="toggle-row">
+      <span>🍹 Zero-proof</span>
+      <label class="toggle"><input type="checkbox" id="zpToggle" onchange="toggleZP()"><span class="slider"></span></label>
+    </div>
+  </div>
+  <div class="content fade-in">
+    <div style="margin-bottom:8px;color:var(--muted);font-size:0.85rem;text-transform:uppercase;letter-spacing:0.08em;">Tonight's lineup</div>
+    <h1 id="hub-title">Let's party 🎉</h1>
+    <p class="sub">Pass your phone around. One URL, everyone plays. No accounts.</p>
+
+    <div class="card">
+      <span class="badge free">FREE</span>
+      <h3>Drink If…</h3>
+      <p>40+ prompts. One per screen. Zero-proof toggle swaps every drink action.</p>
+      <button class="btn sm" onclick="startDrinkIf()" style="margin-top:14px;">Play now</button>
+    </div>
+
+    <div class="card" id="trivia-card">
+      <span class="badge paid">PAID</span>
+      <h3>Bride Trivia 👰</h3>
+      <p id="trivia-card-desc">Organiser fills 20 questions about the bride. Room guesses. Keep score.</p>
+      <button class="btn sm" id="trivia-btn" onclick="triviaEntry()" style="margin-top:14px;">Set up</button>
+    </div>
+
+    <div class="card">
+      <span class="badge paid">PAID</span>
+      <h3>Dare Wheel 🎡</h3>
+      <p>Spin for a dare. Cheeky or bold. Never explicit. Never mean.</p>
+      <button class="btn sm" onclick="startDare()" style="margin-top:14px;">Spin</button>
+    </div>
+
+    <div class="card">
+      <span class="badge paid">PAID</span>
+      <h3>Scavenger Hunt 📸</h3>
+      <p>30 photo missions. Night-out and at-home variants. Check off as you go.</p>
+      <button class="btn sm" onclick="startScav()" style="margin-top:14px;">Start hunt</button>
+    </div>
+
+    <div class="card" id="pdf-card" style="display:none;">
+      <span class="badge paid">PAID</span>
+      <h3>Printable PDF</h3>
+      <p>Generate the full game pack as a PDF. Trivia, dares, scavenger — all in one.</p>
+      <button class="btn sm" onclick="generatePDF()" style="margin-top:14px;">Download PDF</button>
+    </div>
+
+    <div id="unlock-section">
+      <div style="text-align:center;padding:24px 0 8px;font-size:0.9rem;color:var(--muted);">
+        Unlock Bride Trivia, Dare Wheel, Scavenger & PDF
+      </div>
+      <button class="btn gold" onclick="goUnlock()">Unlock everything — £6.99</button>
+      <p style="text-align:center;font-size:0.75rem;color:var(--muted);margin-top:10px;">One-time payment · No account · 48-hour access</p>
+    </div>
+  </div>
+  <footer>
+    🥂 HENPARTY · £6.99 one-time unlock · Every "Drink If" prompt has a no-drink option · Drink responsibly · <a href="mailto:dan.cohen@defimagic.io" style="color:var(--muted);">Contact</a>
+  </footer>
+</div>
+
+<!-- UNLOCK SCREEN -->
+<div id="screen-unlock" class="screen">
+  <div class="top-bar">
+    <button class="btn outline sm" style="width:auto;padding:0 16px;" onclick="goHub()">← Back</button>
+    <span class="logo">🥂 HENPARTY</span>
+    <div style="width:80px;"></div>
+  </div>
+  <div class="content fade-in">
+    <div class="lock-icon">🔓</div>
+    <div class="price-tag">£6.99</div>
+    <div class="price-sub">One-time · 48-hour access · No account</div>
+    <ul class="feature-list">
+      <li>Bride Trivia — 20 personal questions, organiser fills in the answers</li>
+      <li>Dare Wheel — 48 dares across cheeky and bold tiers</li>
+      <li>Scavenger Hunt — 30 photo missions, night-out + at-home variants</li>
+      <li>Printable PDF — download the full pack as a PDF</li>
+    </ul>
+    <a href="https://till.defimagic.io/buy/henparty" id="payment-link" class="btn gold" onclick="recordPaymentAttempt()">Pay £6.99 — Unlock Now</a>
+    <p style="text-align:center;font-size:0.8rem;color:var(--muted);margin-top:12px;">Secure payment · You'll be redirected back with your unlock link</p>
+
+    <div class="token-form">
+      <label>Already paid? Enter your token below:</label>
+      <input type="text" id="token-input" placeholder="Paste your unlock token here" autocomplete="off" autocorrect="off" spellcheck="false">
+      <div class="token-error" id="token-error">Token not recognised. Check the link you received after payment.</div>
+      <button class="btn sm" onclick="manualUnlock()">Unlock with token</button>
+    </div>
+
+    <div id="integration-notice" style="margin-top:24px;padding:14px;background:rgba(245,200,66,0.08);border:1px solid rgba(245,200,66,0.3);border-radius:12px;font-size:0.8rem;color:var(--muted);">
+      <strong style="color:var(--gold);">INTEGRATION-PENDING</strong><br>
+      Payment processing is being set up. If you've received a token from another channel, use the field above.
+    </div>
+  </div>
+</div>
+
+<!-- DRINK IF SCREEN -->
+<div id="screen-drinkif" class="screen">
+  <div class="top-bar">
+    <button class="btn outline sm" style="width:auto;padding:0 16px;" onclick="goHub()">← Hub</button>
+    <span class="logo">🍹 Drink If</span>
+    <div class="toggle-row">
+      <span id="zp-label-di">🥤</span>
+      <label class="toggle"><input type="checkbox" id="zpToggle2" onchange="syncZP(this)"><span class="slider"></span></label>
+    </div>
+  </div>
+  <div class="content fade-in">
+    <div class="progress" id="di-progress">Prompt 1 of 45</div>
+    <div class="big-prompt fade-in" id="di-prompt">Loading…</div>
+    <div class="nav-btns">
+      <button class="btn outline" onclick="prevDI()">← Prev</button>
+      <button class="btn" onclick="nextDI()">Next →</button>
+    </div>
+    <div style="margin-top:20px;text-align:center;">
+      <button class="btn outline sm" style="width:auto;padding:0 20px;" onclick="shuffleDI()">🔀 Shuffle</button>
+    </div>
+    <div style="margin-top:28px;padding:14px;background:var(--card);border-radius:12px;font-size:0.8rem;color:var(--muted);line-height:1.6;">
+      <span id="zp-tip">💡 Turn on Zero-proof to swap drink actions for fun alternatives.</span>
+    </div>
+  </div>
+</div>
+
+<!-- TRIVIA ENTRY SCREEN -->
+<div id="screen-trivia-entry" class="screen">
+  <div class="top-bar">
+    <button class="btn outline sm" style="width:auto;padding:0 16px;" onclick="goHub()">← Hub</button>
+    <span class="logo">👰 Trivia</span>
+    <div style="width:80px;"></div>
+  </div>
+  <div class="content fade-in">
+    <h2>Bride Trivia</h2>
+    <p class="sub">Choose your role: fill in the answers as the organiser, or play as a guest using a link the organiser shared.</p>
+    <button class="btn" onclick="startTriviaSetup()" style="margin-bottom:14px;">I'm the organiser — set up trivia</button>
+    <button class="btn outline" onclick="startTriviaPlay(true)" style="margin-bottom:14px;">I'm a guest — play now</button>
+    <div style="padding:14px;background:var(--card);border-radius:12px;font-size:0.85rem;color:var(--muted);line-height:1.6;">
+      <strong style="color:var(--text);">How it works:</strong><br>
+      Organiser fills in 20 questions on their phone. Reads each question aloud to the room.
+      Guests shout answers. Organiser marks who got it right. Pass the phone to see the scoreboard.
+    </div>
+  </div>
+</div>
+
+<!-- TRIVIA SETUP SCREEN -->
+<div id="screen-trivia-setup" class="screen">
+  <div class="top-bar">
+    <button class="btn outline sm" style="width:auto;padding:0 16px;" onclick="showScreen('screen-trivia-entry')">← Back</button>
+    <span class="logo">👰 Setup</span>
+    <div style="font-size:0.85rem;color:var(--muted);" id="setup-counter">Q 1 of 20</div>
+  </div>
+  <div class="content fade-in">
+    <div class="setup-progress" id="setup-progress-bar"></div>
+    <div id="setup-q-wrap"></div>
+    <div class="nav-btns">
+      <button class="btn outline" id="setup-prev" onclick="setupPrev()">← Prev</button>
+      <button class="btn" id="setup-next" onclick="setupNext()">Next →</button>
+    </div>
+    <p style="font-size:0.8rem;color:var(--muted);text-align:center;margin-top:16px;">Answers are stored on this device only. Don't share this setup screen.</p>
+  </div>
+</div>
+
+<!-- TRIVIA PLAY SCREEN -->
+<div id="screen-trivia-play" class="screen">
+  <div class="top-bar">
+    <button class="btn outline sm" style="width:auto;padding:0 16px;" onclick="showScreen('screen-trivia-entry')">← Back</button>
+    <span class="logo">👰 Trivia</span>
+    <div style="font-size:0.85rem;color:var(--muted);" id="play-counter">Q 1 of 20</div>
+  </div>
+  <div class="content fade-in">
+    <div class="progress" id="play-progress"></div>
+    <div class="trivia-q fade-in" id="play-question">Question</div>
+    <div id="answer-section" style="display:none;">
+      <div class="answer-reveal"><strong>Answer</strong><span id="play-answer"></span></div>
+    </div>
+    <button class="btn outline sm" id="reveal-btn" onclick="revealAnswer()" style="margin-bottom:16px;">Reveal answer</button>
+    <h3 style="margin-bottom:12px;font-size:0.9rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);">Who got it right?</h3>
+    <div class="trivia-players" id="players-list"></div>
+    <button class="btn outline sm" onclick="addPlayer()" style="margin-bottom:20px;">+ Add player</button>
+    <div class="nav-btns">
+      <button class="btn outline" onclick="prevTriviaQ()">← Prev</button>
+      <button class="btn" onclick="nextTriviaQ()">Next →</button>
+    </div>
+  </div>
+</div>
+
+<!-- DARE SCREEN -->
+<div id="screen-dare" class="screen">
+  <div class="top-bar">
+    <button class="btn outline sm" style="width:auto;padding:0 16px;" onclick="goHub()">← Hub</button>
+    <span class="logo">🎡 Dare Wheel</span>
+    <div style="width:80px;"></div>
+  </div>
+  <div class="content fade-in">
+    <div class="heat-row">
+      <button class="heat-btn active" id="heat-cheeky" onclick="setHeat('cheeky')">😏 Cheeky</button>
+      <button class="heat-btn" id="heat-bold" onclick="setHeat('bold')">🔥 Bold</button>
+    </div>
+    <div class="wheel-wrap">
+      <canvas id="wheel-canvas" width="560" height="560"></canvas>
+      <div class="wheel-pointer"></div>
+    </div>
+    <div class="dare-result fade-in" id="dare-result">Spin the wheel to get a dare!</div>
+    <button class="btn gold" id="spin-btn" onclick="spinWheel()">Spin!</button>
+    <button class="btn outline sm" style="margin-top:12px;" onclick="skipDare()">Skip dare</button>
+  </div>
+</div>
+
+<!-- SCAVENGER SCREEN -->
+<div id="screen-scav" class="screen">
+  <div class="top-bar">
+    <button class="btn outline sm" style="width:auto;padding:0 16px;" onclick="goHub()">← Hub</button>
+    <span class="logo">📸 Scavenger</span>
+    <div style="width:80px;"></div>
+  </div>
+  <div class="content fade-in">
+    <div class="heat-row">
+      <button class="heat-btn active" id="scav-night" onclick="setScavMode('night')">🌙 Night Out</button>
+      <button class="heat-btn" id="scav-home" onclick="setScavMode('home')">🏠 At Home</button>
+    </div>
+    <div class="scav-count" id="scav-count">0 / 15 complete</div>
+    <div id="scav-list"></div>
+  </div>
+</div>
+
+<script>
+(function(){
+// ==================== DATA ====================
+
+const DRINK_IF = [
+  {drink:"drink if you've been to a drive-through at 2am",alt:"do a little happy dance"},
+  {drink:"drink if you've dated someone your friends warned you about",alt:"share a tiny secret (optional)"},
+  {drink:"drink if you've cried during a Disney movie as an adult",alt:"name the film out loud"},
+  {drink:"drink if you've ghosted someone and felt just a tiny bit bad about it",alt:"take a bow"},
+  {drink:"drink if you've ordered dessert when you said you definitely wouldn't",alt:"eat a snack right now"},
+  {drink:"drink if you've texted an ex after midnight",alt:"do a little wiggle"},
+  {drink:"drink if you've regretted a haircut for more than a month",alt:"touch your hair slowly"},
+  {drink:"drink if you've made up an excuse to leave a party early",alt:"do a dramatic exit from your seat"},
+  {drink:"drink if you've called in sick when you were completely fine",alt:"do your most convincing sick face"},
+  {drink:"drink if you've had a crush on someone who had absolutely no idea you existed",alt:"put your hand on your heart"},
+  {drink:"drink if you've bought an outfit specifically for a night out and never worn it",alt:"hold up both hands"},
+  {drink:"drink if you've done karaoke completely sober",alt:"sing the next 5 words of any song in your head"},
+  {drink:"drink if you've been on a first date so bad it became a story",alt:"summarise it in exactly 5 words"},
+  {drink:"drink if you've bought something on impulse and hidden it from yourself",alt:"clap twice"},
+  {drink:"drink if you've missed a flight, train, or bus",alt:"throw your hands up"},
+  {drink:"drink if you've eaten cereal as your dinner after noon",alt:"do a victory lap in your seat"},
+  {drink:"drink if you've been the last to know about something everyone else already knew",alt:"say 'seriously?' out loud"},
+  {drink:"drink if you've matched with someone you knew on a dating app and said absolutely nothing",alt:"cover your face"},
+  {drink:"drink if you've convinced yourself something was fine when it really, really wasn't",alt:"nod slowly"},
+  {drink:"drink if you've accidentally liked a post while deep-stalking someone's Instagram",alt:"say 'it was so long ago'"},
+  {drink:"drink if you've worn the same outfit two days in a row on purpose",alt:"stand up briefly"},
+  {drink:"drink if you've rehearsed a whole conversation in your head before having it",alt:"do air quotes about how prepared you were"},
+  {drink:"drink if you've blamed autocorrect when it was absolutely not autocorrect",alt:"look at the ceiling"},
+  {drink:"drink if you've fallen asleep on public transport and woken up in a panic",alt:"gasp dramatically"},
+  {drink:"drink if you've said 'I'll just have water' and then ordered a full meal",alt:"rub your hands together"},
+  {drink:"drink if you've given someone wrong directions because you were too embarrassed to admit you didn't know",alt:"point confidently in a random direction"},
+  {drink:"drink if you've been brutally honest when someone asked for your opinion and they asked for it",alt:"do a little shrug"},
+  {drink:"drink if you've spent more on a single takeaway than your weekly grocery shop",alt:"raise the roof"},
+  {drink:"drink if you've sent a voice note over 3 minutes long",alt:"mime typing furiously on your thumbs"},
+  {drink:"drink if you've had a full argument in your head that never actually happened out loud",alt:"exhale dramatically"},
+  {drink:"drink if you've looked up a word mid-argument just to win it",alt:"point one finger triumphantly upward"},
+  {drink:"drink if you've rewatched something you'd already seen and pretended not to when someone suggested it",alt:"say 'no spoilers' protectively"},
+  {drink:"drink if you've had a full-on crush on a fictional character",alt:"name them if you dare"},
+  {drink:"drink if you've been to more than 3 hen-dos or bachelorette parties",alt:"hold up your fingers for the count"},
+  {drink:"drink if you've known the bride for more than 10 years",alt:"reach over and squeeze her hand"},
+  {drink:"drink if you've already cried today and it's not even that late",alt:"hold your glass up anyway"},
+  {drink:"drink if you planned something for this weekend weeks in advance",alt:"stand up and take a bow"},
+  {drink:"drink if you've already picked out your outfit for tomorrow",alt:"do a quick catwalk pose"},
+  {drink:"drink if you've received a wedding save-the-date in the last 6 months",alt:"raise your glass"},
+  {drink:"drink if you've been a bridesmaid before",alt:"curtsy"},
+  {drink:"drink if you know someone who eloped",alt:"chef's kiss"},
+  {drink:"drink if you've ever caught a wedding bouquet",alt:"strike a victorious pose"},
+  {drink:"drink if you slow-danced at a wedding in the last year",alt:"do a little sway right now"},
+  {drink:"drink if you've helped plan a proposal",alt:"tell us how it went in 10 words or less"},
+  {drink:"drink if you've already thought about what you'd wear to THIS wedding",alt:"do a little twirl"}
+];
+
+const TRIVIA_TEMPLATES = [
+  {q:"What is the bride's middle name?",placeholder:"e.g. Rose"},
+  {q:"What does the bride always order at her favourite coffee shop?",placeholder:"e.g. oat flat white, extra shot"},
+  {q:"Where did the bride grow up?",placeholder:"Town or city"},
+  {q:"What was the bride's first-ever job?",placeholder:"e.g. waitress at a pizza place"},
+  {q:"What is the bride's go-to karaoke song?",placeholder:"Song title and artist"},
+  {q:"What does the bride always have in her bag?",placeholder:"e.g. lip balm, emergency snacks"},
+  {q:"Where did the bride and her partner go on their first date?",placeholder:"e.g. bowling, a Thai restaurant"},
+  {q:"Where did they first say 'I love you'?",placeholder:"Place or occasion"},
+  {q:"What is the bride's most-played song or favourite song right now?",placeholder:"Song title"},
+  {q:"What did the bride want to be when she grew up?",placeholder:"e.g. vet, pop star, astronaut"},
+  {q:"Where does the bride dream of going for the honeymoon?",placeholder:"Country or city"},
+  {q:"What is the bride's biggest guilty pleasure TV show?",placeholder:"Show name"},
+  {q:"What is the bride most likely to be doing at midnight?",placeholder:"e.g. asleep by 10, still watching Netflix"},
+  {q:"What does the bride say too often?",placeholder:"A phrase, filler word, or reaction"},
+  {q:"What would the bride eat for her last meal on earth?",placeholder:"Full meal description"},
+  {q:"What is the bride's most embarrassing moment? (one the bride would actually share)",placeholder:"Brief description"},
+  {q:"If the bride could only have one app on her phone, what would it be?",placeholder:"App name"},
+  {q:"What is the bride's signature dance move called? (name it)",placeholder:"e.g. 'The Shimmy', 'The Knee Slide'"},
+  {q:"Complete this sentence: 'The bride is most likely to…'",placeholder:"e.g. order chips AND a salad"},
+  {q:"What is one thing the bride cannot leave the house without?",placeholder:"Object or habit"}
+];
+
+const DARES_CHEEKY = [
+  "Give the person to your left a 10-second shoulder massage",
+  "Call your mum and tell her you love her. Right now. Speakerphone.",
+  "Do your very best impression of the bride",
+  "Text someone 'I've been meaning to tell you something' and wait for them to reply",
+  "Perform a 10-second Irish jig — someone times you",
+  "Finish your next sip using only your non-dominant hand",
+  "Tell the group your most recent embarrassing moment in full",
+  "Say 'cheers!' convincingly in 5 different accents",
+  "Demonstrate your go-to karaoke face. Right now. Full commitment.",
+  "Stand up and take a bow for absolutely no reason",
+  "Compliment every single person in the room. You have 60 seconds.",
+  "Let the bride change your phone wallpaper for the rest of the night",
+  "Do your best 'I just arrived at the party' strut across the room",
+  "Post one photo from tonight on your story. Bride chooses the caption.",
+  "Sing the next song that plays for at least 30 seconds. No excuses.",
+  "Let the group pick a new nickname for you for the next 3 rounds",
+  "Swap one item of clothing with the person to your right for one round",
+  "Show the last emoji you sent to someone and explain the full context",
+  "Speak in a different accent until your next turn. Group chooses which one.",
+  "Admit your most embarrassing guilty pleasure TV show in full",
+  "Deliver a heartfelt wedding toast to the bride. Right now. 60 seconds.",
+  "Strike your best magazine-cover pose and hold it for 10 seconds",
+  "Tell us who in this room would survive a zombie apocalypse longest and explain your reasoning",
+  "Let the bride read your most embarrassing recent text exchange aloud to the group"
+];
+
+const DARES_BOLD = [
+  "Tell the room about your most regrettable haircut — then reenact the conversation with the stylist",
+  "Send a voice note to someone NOT here saying 'I miss you, been thinking about you' — wait for the reply",
+  "Let the room compose a text to someone in your contacts. Bride approves it before you send.",
+  "Roast the bride in 60 seconds. Nothing off-limits except things that are actually off-limits.",
+  "Describe your most recent situationship in exactly 10 words",
+  "Let the bride scroll 2 years back in your camera roll and pick one photo to explain",
+  "Do the most convincing fake cry you can manage. Hold it for 10 seconds.",
+  "Read out the last 5 songs in your Recently Played. No deletions first.",
+  "Tell the group the very first thing you noticed about the bride's partner",
+  "Describe the bride's love life before her partner in one sentence she would agree is accurate",
+  "Put your phone face-up in the middle of the group for the next 10 minutes. Notifications visible.",
+  "The bride posts one thing to your Instagram story. She has 60 seconds. No veto.",
+  "Tell the story of the worst date you've ever been on. Full details. 90 seconds max.",
+  "Do a dramatic reenactment of the moment you heard the bride was engaged",
+  "Admit: when you first met the bride, what did you actually think of her?",
+  "Tell the one person you choose what you genuinely thought of them when you first met",
+  "Let the group order a drink for you and you must accept whatever they choose",
+  "Share your most controversial food opinion. The group votes on whether you're right.",
+  "Describe your perfect night using only 3 emojis — then explain each one",
+  "Tell the room what career you'd have if you could start your working life over",
+  "Name one person in this room you would swap for a celebrity tonight and defend the choice",
+  "Deliver a 30-second motivational speech about absolutely nothing specific",
+  "Let the bride scroll your following list. She picks 3 accounts. You explain each one.",
+  "Tell the room honestly what you think the bride's married life will look like in 5 years"
+];
+
+const SCAV_NIGHT = [
+  "Get a photo with someone who's been married for more than 20 years",
+  "Find a stranger wearing something with a heart on it",
+  "Get a bartender or bar person to sign the back of your hand",
+  "Find someone whose name is the same as one of the bridesmaids",
+  "Get a photo of a couple holding hands",
+  "Find a sign featuring the first letter of the bride's name",
+  "Get a stranger to write 'Team Bride' on a napkin for you",
+  "Take a selfie with someone wearing a wedding ring",
+  "Get a man you don't know to hold the bride's bouquet/accessory for a photo",
+  "Convince a stranger to show you their best dance move",
+  "Find a poster or sign featuring the wedding venue's city or country",
+  "Get someone behind a bar to tell you their personal favourite cocktail",
+  "Take a group selfie where every single person's face is visible",
+  "Find a stranger willing to serenade the bride for 10 seconds",
+  "Get a photo of the whole group outside any place of worship you pass"
+];
+
+const SCAV_HOME = [
+  "Find something in the accommodation shaped like a heart",
+  "Photo of the most chaotic bag in the group (owner must consent)",
+  "Get everyone wearing something pink or red in one group photo",
+  "Find the most unexpected receipt in anyone's bag",
+  "Line everyone up in strict height order and photograph it",
+  "Find the most random object in the accommodation and give it an official name",
+  "Capture someone's attempt at their most dramatic pose",
+  "Take a photo that genuinely looks like an album cover",
+  "Find something in the space that belongs to a completely different decade",
+  "Get everyone to do the exact same pose — someone else picks the pose",
+  "Find one object that perfectly sums up the bride's personality",
+  "Take a photo that could pass for a lifestyle magazine spread",
+  "Capture the most elaborate makeup look of the night so far",
+  "Find something someone packed that is completely impractical for a house party",
+  "Build the world's most unhinged snack board and photograph it for posterity"
+];
+
+// ==================== STATE ====================
+
+let state = {
+  zeroproof: false,
+  paid: false,
+  diIndex: 0,
+  diOrder: [],
+  dareHeat: 'cheeky',
+  dareUsed: {cheeky:[], bold:[]},
+  triviaAnswers: Array(20).fill(''),
+  triviaSetupIndex: 0,
+  triviaQIndex: 0,
+  triviaRevealed: false,
+  players: [],
+  scores: {},
+  scavMode: 'night',
+  scavDone: {night:Array(15).fill(false), home:Array(15).fill(false)},
+  wheelAngle: 0,
+  spinning: false
+};
+
+// ==================== INIT ====================
+
+function init(){
+  // Check stored session
+  const token = localStorage.getItem('henparty_token');
+  const tokenExp = localStorage.getItem('henparty_exp');
+  if(token && tokenExp && Date.now() < parseInt(tokenExp)){
+    state.paid = true;
+  }
+
+  // Restore ZP preference
+  state.zeroproof = localStorage.getItem('henparty_zp') === '1';
+  syncZPDisplays();
+
+  // Restore scav state
+  const savedScav = localStorage.getItem('henparty_scav');
+  if(savedScav) try{ state.scavDone = JSON.parse(savedScav); }catch(e){}
+
+  // Restore trivia answers
+  const savedTrivia = localStorage.getItem('henparty_trivia');
+  if(savedTrivia) try{ state.triviaAnswers = JSON.parse(savedTrivia); }catch(e){}
+
+  // Restore players
+  const savedPlayers = localStorage.getItem('henparty_players');
+  if(savedPlayers) try{
+    const p = JSON.parse(savedPlayers);
+    state.players = p.players || [];
+    state.scores = p.scores || {};
+  }catch(e){}
+
+  // Check URL for token
+  const params = new URLSearchParams(window.location.search);
+  const urlToken = params.get('token');
+  if(urlToken){ verifyToken(urlToken); return; }
+
+  // Check if age gate already passed
+  if(localStorage.getItem('henparty_age') === '1'){
+    showScreen('screen-hub');
+    updateHub();
+  }
+}
+
+function confirmAge(){
+  localStorage.setItem('henparty_age','1');
+  showScreen('screen-hub');
+  updateHub();
+}
+
+// ==================== SCREEN NAV ====================
+
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  const el = document.getElementById(id);
+  if(el){ el.classList.add('active'); el.scrollTop = 0; }
+}
+
+function goHub(){
+  updateHub();
+  showScreen('screen-hub');
+}
+
+function updateHub(){
+  const section = document.getElementById('unlock-section');
+  const pdfCard = document.getElementById('pdf-card');
+  if(state.paid){
+    if(section) section.style.display = 'none';
+    if(pdfCard) pdfCard.style.display = '';
+    ['trivia-card','dare-card','scav-card'].forEach(id=>{
+      const el = document.getElementById(id);
+      if(el) el.querySelector('.badge').className = 'badge free';
+    });
+  }
+}
+
+// ==================== ZERO PROOF ====================
+
+function toggleZP(){
+  state.zeroproof = document.getElementById('zpToggle').checked;
+  localStorage.setItem('henparty_zp', state.zeroproof ? '1' : '0');
+  syncZPDisplays();
+  renderDI();
+}
+
+function syncZP(el){
+  state.zeroproof = el.checked;
+  document.getElementById('zpToggle').checked = state.zeroproof;
+  localStorage.setItem('henparty_zp', state.zeroproof ? '1' : '0');
+  syncZPDisplays();
+  renderDI();
+}
+
+function syncZPDisplays(){
+  document.getElementById('zpToggle').checked = state.zeroproof;
+  const toggle2 = document.getElementById('zpToggle2');
+  if(toggle2) toggle2.checked = state.zeroproof;
+  const label = document.getElementById('zp-label-di');
+  if(label) label.textContent = state.zeroproof ? '🥤 Zero-proof ON' : '🥤';
+  const tip = document.getElementById('zp-tip');
+  if(tip) tip.textContent = state.zeroproof
+    ? '✅ Zero-proof is ON — all drink actions replaced.'
+    : '💡 Turn on Zero-proof to swap drink actions for fun alternatives.';
+}
+
+// ==================== DRINK IF ====================
+
+function startDrinkIf(){
+  if(state.diOrder.length === 0){
+    state.diOrder = DRINK_IF.map((_,i)=>i);
+    shuffleArray(state.diOrder);
+  }
+  state.diIndex = 0;
+  renderDI();
+  showScreen('screen-drinkif');
+}
+
+function renderDI(){
+  const idx = state.diOrder[state.diIndex];
+  const item = DRINK_IF[idx];
+  const total = DRINK_IF.length;
+  const el = document.getElementById('di-prompt');
+  const prog = document.getElementById('di-progress');
+  if(!el || !item) return;
+  const text = state.zeroproof
+    ? '🥤 ' + capitalise(item.alt)
+    : '🍹 ' + capitalise(item.drink);
+  el.textContent = text;
+  el.classList.remove('fade-in');
+  void el.offsetWidth;
+  el.classList.add('fade-in');
+  prog.textContent = `Prompt ${state.diIndex+1} of ${total}`;
+}
+
+function nextDI(){
+  if(state.diIndex < DRINK_IF.length-1) state.diIndex++;
+  else state.diIndex = 0;
+  renderDI();
+}
+
+function prevDI(){
+  if(state.diIndex > 0) state.diIndex--;
+  else state.diIndex = DRINK_IF.length-1;
+  renderDI();
+}
+
+function shuffleDI(){
+  shuffleArray(state.diOrder);
+  state.diIndex = 0;
+  renderDI();
+}
+
+// ==================== UNLOCK ====================
+
+function goUnlock(){
+  if(!state.paid) showScreen('screen-unlock');
+  else goHub();
+}
+
+function recordPaymentAttempt(){
+  localStorage.setItem('henparty_payment_attempt', Date.now().toString());
+}
+
+function manualUnlock(){
+  const token = document.getElementById('token-input').value.trim();
+  const errEl = document.getElementById('token-error');
+  if(!token){ errEl.style.display='block'; errEl.textContent='Please enter a token.'; return; }
+  errEl.style.display='none';
+  verifyToken(token);
+}
+
+async function verifyToken(token){
+  try{
+    const res = await fetch(`https://till.defimagic.io/verify?token=${encodeURIComponent(token)}&product=henparty`);
+    if(!res.ok) throw new Error('not ok');
+    const data = await res.json();
+    if(data && data.valid){
+      const exp = Date.now() + 48*60*60*1000;
+      localStorage.setItem('henparty_token', token);
+      localStorage.setItem('henparty_exp', exp.toString());
+      state.paid = true;
+      updateHub();
+      showScreen('screen-hub');
+    } else {
+      showTokenError('Token not recognised. Check the link you received after payment.');
+    }
+  } catch(e){
+    // Till not yet live — check for a dev override
+    if(token === localStorage.getItem('henparty_dev_key')){
+      const exp = Date.now() + 48*60*60*1000;
+      localStorage.setItem('henparty_token', token);
+      localStorage.setItem('henparty_exp', exp.toString());
+      state.paid = true;
+      updateHub();
+      showScreen('screen-hub');
+    } else {
+      showTokenError('Could not reach the payment server. If you paid, please contact dan.cohen@defimagic.io with your order details.');
+    }
+  }
+}
+
+function showTokenError(msg){
+  const el = document.getElementById('token-error');
+  if(el){ el.style.display='block'; el.textContent=msg; }
+  else alert(msg);
+}
+
+// ==================== PAID GATE ====================
+
+function requirePaid(callback){
+  if(state.paid){ callback(); return; }
+  showScreen('screen-unlock');
+}
+
+function triviaEntry(){ requirePaid(()=>showScreen('screen-trivia-entry')); }
+function startDare(){ requirePaid(initDare); }
+function startScav(){ requirePaid(initScav); }
+
+// ==================== TRIVIA SETUP ====================
+
+function startTriviaSetup(){
+  state.triviaSetupIndex = 0;
+  renderSetupQ();
+  showScreen('screen-trivia-setup');
+}
+
+function renderSetupQ(){
+  const idx = state.triviaSetupIndex;
+  const tmpl = TRIVIA_TEMPLATES[idx];
+  const wrap = document.getElementById('setup-q-wrap');
+  const counter = document.getElementById('setup-counter');
+  const bar = document.getElementById('setup-progress-bar');
+  if(!wrap || !tmpl) return;
+
+  counter.textContent = `Q ${idx+1} of ${TRIVIA_TEMPLATES.length}`;
+
+  // Progress bar
+  bar.innerHTML = TRIVIA_TEMPLATES.map((_,i)=>{
+    let cls = i < idx ? 'done' : (i===idx ? 'current' : '');
+    return `<span class="${cls}"></span>`;
+  }).join('');
+
+  wrap.innerHTML = `
+    <div class="setup-q">
+      <label>Question ${idx+1}</label>
+      <div style="font-size:1.1rem;font-weight:700;margin-bottom:12px;line-height:1.4;">${tmpl.q}</div>
+      <textarea rows="2" placeholder="${tmpl.placeholder}" id="setup-answer">${state.triviaAnswers[idx]||''}</textarea>
+      <div class="hint">Fill in the bride's actual answer. Only you see this screen.</div>
+    </div>`;
+
+  const prevBtn = document.getElementById('setup-prev');
+  const nextBtn = document.getElementById('setup-next');
+  if(prevBtn) prevBtn.style.opacity = idx===0 ? '0.4' : '1';
+  if(nextBtn) nextBtn.textContent = idx===TRIVIA_TEMPLATES.length-1 ? 'Save & Play →' : 'Next →';
+}
+
+function setupSaveCurrentAnswer(){
+  const inp = document.getElementById('setup-answer');
+  if(inp) state.triviaAnswers[state.triviaSetupIndex] = inp.value;
+  localStorage.setItem('henparty_trivia', JSON.stringify(state.triviaAnswers));
+}
+
+function setupNext(){
+  setupSaveCurrentAnswer();
+  if(state.triviaSetupIndex < TRIVIA_TEMPLATES.length-1){
+    state.triviaSetupIndex++;
+    renderSetupQ();
+  } else {
+    startTriviaPlay(false);
+  }
+}
+
+function setupPrev(){
+  setupSaveCurrentAnswer();
+  if(state.triviaSetupIndex > 0){
+    state.triviaSetupIndex--;
+    renderSetupQ();
+  }
+}
+
+// ==================== TRIVIA PLAY ====================
+
+function startTriviaPlay(guestMode){
+  if(state.players.length === 0){
+    const names = prompt('Enter player names separated by commas (e.g. Sarah, Emma, Katie):');
+    if(!names) return;
+    state.players = names.split(',').map(n=>n.trim()).filter(Boolean);
+    state.scores = {};
+    state.players.forEach(p=>{ state.scores[p] = 0; });
+    localStorage.setItem('henparty_players', JSON.stringify({players:state.players, scores:state.scores}));
+  }
+  state.triviaQIndex = 0;
+  state.triviaRevealed = false;
+  renderTriviaPlay();
+  showScreen('screen-trivia-play');
+}
+
+function renderTriviaPlay(){
+  const idx = state.triviaQIndex;
+  const tmpl = TRIVIA_TEMPLATES[idx];
+  const q = document.getElementById('play-question');
+  const prog = document.getElementById('play-progress');
+  const counter = document.getElementById('play-counter');
+  const ansSection = document.getElementById('answer-section');
+  const revBtn = document.getElementById('reveal-btn');
+
+  if(!tmpl) return;
+  q.textContent = tmpl.q;
+  prog.textContent = '';
+  counter.textContent = `Q ${idx+1} of ${TRIVIA_TEMPLATES.length}`;
+
+  state.triviaRevealed = false;
+  if(ansSection) ansSection.style.display = 'none';
+  if(revBtn) revBtn.style.display = '';
+
+  renderPlayers();
+}
+
+function revealAnswer(){
+  const idx = state.triviaQIndex;
+  const answer = state.triviaAnswers[idx];
+  const ansEl = document.getElementById('play-answer');
+  const ansSection = document.getElementById('answer-section');
+  const revBtn = document.getElementById('reveal-btn');
+  if(ansEl) ansEl.textContent = answer || '(no answer filled in)';
+  if(ansSection) ansSection.style.display = '';
+  if(revBtn) revBtn.style.display = 'none';
+  state.triviaRevealed = true;
+}
+
+function renderPlayers(){
+  const list = document.getElementById('players-list');
+  if(!list) return;
+  list.innerHTML = state.players.map(p=>`
+    <div class="player-row">
+      <span class="player-name">${esc(p)}</span>
+      <div class="score-btn">
+        <button class="minus" onclick="adjustScore('${esc(p)}',-1)">−</button>
+        <span class="player-score">${state.scores[p]||0}</span>
+        <button class="plus" onclick="adjustScore('${esc(p)}',1)">+</button>
+      </div>
+    </div>`).join('');
+}
+
+function adjustScore(player, delta){
+  state.scores[player] = Math.max(0, (state.scores[player]||0) + delta);
+  localStorage.setItem('henparty_players', JSON.stringify({players:state.players,scores:state.scores}));
+  renderPlayers();
+}
+
+function addPlayer(){
+  const name = prompt('Enter player name:');
+  if(!name || !name.trim()) return;
+  const n = name.trim();
+  if(!state.players.includes(n)){
+    state.players.push(n);
+    state.scores[n] = 0;
+    localStorage.setItem('henparty_players', JSON.stringify({players:state.players,scores:state.scores}));
+    renderPlayers();
+  }
+}
+
+function nextTriviaQ(){
+  if(state.triviaQIndex < TRIVIA_TEMPLATES.length-1){
+    state.triviaQIndex++;
+    renderTriviaPlay();
+  }
+}
+
+function prevTriviaQ(){
+  if(state.triviaQIndex > 0){
+    state.triviaQIndex--;
+    renderTriviaPlay();
+  }
+}
+
+// ==================== DARE WHEEL ====================
+
+function initDare(){
+  state.dareHeat = 'cheeky';
+  state.dareUsed = {cheeky:[], bold:[]};
+  state.wheelAngle = 0;
+  drawWheel();
+  document.getElementById('dare-result').textContent = 'Spin the wheel to get a dare!';
+  showScreen('screen-dare');
+}
+
+function setHeat(h){
+  state.dareHeat = h;
+  document.getElementById('heat-cheeky').classList.toggle('active', h==='cheeky');
+  document.getElementById('heat-bold').classList.toggle('active', h==='bold');
+  drawWheel();
+  document.getElementById('dare-result').textContent = 'Spin for a ' + h + ' dare!';
+}
+
+function getWheelColors(heat){
+  if(heat==='cheeky') return ['#FF4B8C','#FF7EAD','#E63E7D','#FF9EC3','#CC2B6A','#FF6699'];
+  return ['#8B0000','#CC0033','#FF3355','#990022','#FF0044','#660011'];
+}
+
+function drawWheel(angle){
+  const canvas = document.getElementById('wheel-canvas');
+  if(!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = 560, H = 560, R = 260, cx = W/2, cy = H/2;
+  const heat = state.dareHeat;
+  const labels = heat==='cheeky'
+    ? ['😏','🎲','😂','🎉','💃','🎊']
+    : ['🔥','💣','⚡','🎯','🌶️','🃏'];
+  const colors = getWheelColors(heat);
+  const n = labels.length;
+  const arc = (Math.PI*2)/n;
+  const rot = (angle||state.wheelAngle) - Math.PI/2;
+
+  ctx.clearRect(0,0,W,H);
+
+  // Shadow ring
+  ctx.save();
+  ctx.shadowColor='rgba(0,0,0,0.5)';
+  ctx.shadowBlur=20;
+  ctx.beginPath();
+  ctx.arc(cx,cy,R+4,0,Math.PI*2);
+  ctx.fillStyle='rgba(0,0,0,0.3)';
+  ctx.fill();
+  ctx.restore();
+
+  for(let i=0;i<n;i++){
+    const start = rot + i*arc;
+    const end = start + arc;
+    ctx.beginPath();
+    ctx.moveTo(cx,cy);
+    ctx.arc(cx,cy,R,start,end);
+    ctx.closePath();
+    ctx.fillStyle = colors[i % colors.length];
+    ctx.fill();
+    ctx.strokeStyle='rgba(255,255,255,0.3)';
+    ctx.lineWidth=2;
+    ctx.stroke();
+
+    ctx.save();
+    ctx.translate(cx,cy);
+    ctx.rotate(start + arc/2);
+    ctx.translate(R*0.65,0);
+    ctx.font = 'bold 36px sans-serif';
+    ctx.textAlign='center';
+    ctx.textBaseline='middle';
+    ctx.fillText(labels[i],0,0);
+    ctx.restore();
+  }
+
+  // Center circle
+  ctx.beginPath();
+  ctx.arc(cx,cy,36,0,Math.PI*2);
+  ctx.fillStyle='#1A0A2E';
+  ctx.fill();
+  ctx.strokeStyle='rgba(255,255,255,0.3)';
+  ctx.lineWidth=3;
+  ctx.stroke();
+  ctx.font='bold 20px sans-serif';
+  ctx.fillStyle='#fff';
+  ctx.textAlign='center';
+  ctx.textBaseline='middle';
+  ctx.fillText('🥂',cx,cy);
+}
+
+function spinWheel(){
+  if(state.spinning) return;
+  state.spinning = true;
+  const btn = document.getElementById('spin-btn');
+  if(btn){ btn.disabled=true; btn.textContent='Spinning…'; }
+
+  const totalRotation = (Math.random()*360 + 1080) * (Math.PI/180);
+  const duration = 3000 + Math.random()*1000;
+  const startAngle = state.wheelAngle;
+  const startTime = performance.now();
+
+  function easeOut(t){ return 1 - Math.pow(1-t, 4); }
+
+  function frame(now){
+    const elapsed = now - startTime;
+    const t = Math.min(elapsed/duration, 1);
+    const currentAngle = startAngle + totalRotation * easeOut(t);
+    state.wheelAngle = currentAngle;
+    drawWheel(currentAngle);
+
+    if(t < 1){
+      requestAnimationFrame(frame);
+    } else {
+      state.spinning = false;
+      if(btn){ btn.disabled=false; btn.textContent='Spin again!'; }
+      pickDare();
+    }
+  }
+  requestAnimationFrame(frame);
+}
+
+function pickDare(){
+  const heat = state.dareHeat;
+  const pool = heat==='cheeky' ? DARES_CHEEKY : DARES_BOLD;
+  const used = state.dareUsed[heat];
+  let available = pool.map((_,i)=>i).filter(i=>!used.includes(i));
+  if(available.length===0){ state.dareUsed[heat]=[]; available=pool.map((_,i)=>i); }
+
+  // Pick based on wheel angle
+  const idx = available[Math.floor(Math.random()*available.length)];
+  state.dareUsed[heat].push(idx);
+
+  const resultEl = document.getElementById('dare-result');
+  resultEl.textContent = pool[idx];
+  resultEl.classList.remove('spin-done');
+  void resultEl.offsetWidth;
+  resultEl.classList.add('spin-done');
+}
+
+function skipDare(){
+  pickDare();
+}
+
+// ==================== SCAVENGER ====================
+
+function initScav(){
+  state.scavMode = 'night';
+  renderScav();
+  showScreen('screen-scav');
+}
+
+function setScavMode(mode){
+  state.scavMode = mode;
+  document.getElementById('scav-night').classList.toggle('active', mode==='night');
+  document.getElementById('scav-home').classList.toggle('active', mode==='home');
+  renderScav();
+}
+
+function renderScav(){
+  const mode = state.scavMode;
+  const items = mode==='night' ? SCAV_NIGHT : SCAV_HOME;
+  const done = state.scavDone[mode];
+  const count = done.filter(Boolean).length;
+  const list = document.getElementById('scav-list');
+  const countEl = document.getElementById('scav-count');
+  if(!list) return;
+
+  countEl.textContent = `${count} / ${items.length} complete 🏆`;
+
+  list.innerHTML = items.map((item,i)=>`
+    <div class="scav-item ${done[i]?'scav-done':''}" onclick="toggleScav(${i})">
+      <div class="scav-check ${done[i]?'done':''}">${done[i]?'✓':''}</div>
+      <span class="scav-text">${esc(item)}</span>
+    </div>`).join('');
+}
+
+function toggleScav(idx){
+  const mode = state.scavMode;
+  state.scavDone[mode][idx] = !state.scavDone[mode][idx];
+  localStorage.setItem('henparty_scav', JSON.stringify(state.scavDone));
+  renderScav();
+}
+
+// ==================== PDF ====================
+
+function generatePDF(){
+  const triviaFilled = TRIVIA_TEMPLATES.map((t,i)=>({q:t.q, a:state.triviaAnswers[i]||'—'}));
+  const pdf = buildPDF(triviaFilled, DARES_CHEEKY.slice(0,12).concat(DARES_BOLD.slice(0,12)), SCAV_NIGHT.concat(SCAV_HOME));
+  const blob = new Blob([pdf], {type:'application/pdf'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href=url; a.download='HENPARTY-game-pack.pdf'; a.click();
+  setTimeout(()=>URL.revokeObjectURL(url), 3000);
+}
+
+function buildPDF(trivia, dares, scav){
+  const lines = [];
+  const objs = [];
+  let oid = 1;
+
+  function addObj(content){
+    objs.push({id:oid++, content});
+    return objs[objs.length-1].id;
+  }
+
+  function pdfStr(s){
+    return s.replace(/\\/g,'\\\\').replace(/\(/g,'\\(').replace(/\)/g,'\\)').replace(/[^\x00-\x7F]/g,'?');
+  }
+
+  const pageIds = [];
+  const contentIds = [];
+
+  function makeContentStream(text){
+    const escaped = pdfStr(text);
+    return `BT\n/F1 12 Tf\n14 TL\n50 750 Td\n${escaped}\nET`;
+  }
+
+  // Build text content for each page
+  const pages = [];
+
+  // Page 1: Title
+  pages.push('BT\n/F1 20 Tf\n50 750 Td\n(HENPARTY Game Pack) Tj\n/F1 12 Tf\n0 -40 Td\n(Generated for tonight\'s party.) Tj\n/F1 10 Tf\n0 -30 Td\n(henparty.defimagic.io) Tj\nET');
+
+  // Page 2: Trivia
+  let triviaText = 'BT\n/F1 16 Tf\n50 780 Td\n(Bride Trivia) Tj\n/F1 10 Tf\n0 -30 Td\n';
+  trivia.forEach((item, i)=>{
+    const q = pdfStr(`${i+1}. ${item.q}`);
+    const a = pdfStr(`   Answer: ${item.a}`);
+    triviaText += `(${q}) Tj\n0 -16 Td\n(${a}) Tj\n0 -20 Td\n`;
+  });
+  triviaText += 'ET';
+  pages.push(triviaText);
+
+  // Page 3: Dares
+  let daresText = 'BT\n/F1 16 Tf\n50 780 Td\n(Dare Wheel - Cheeky Dares) Tj\n/F1 10 Tf\n0 -30 Td\n';
+  DARES_CHEEKY.forEach((d,i)=>{
+    const line = pdfStr(`${i+1}. ${d.substring(0,80)}`);
+    daresText += `(${line}) Tj\n0 -16 Td\n`;
+  });
+  daresText += 'ET';
+  pages.push(daresText);
+
+  // Page 4: Bold Dares
+  let boldText = 'BT\n/F1 16 Tf\n50 780 Td\n(Dare Wheel - Bold Dares) Tj\n/F1 10 Tf\n0 -30 Td\n';
+  DARES_BOLD.forEach((d,i)=>{
+    const line = pdfStr(`${i+1}. ${d.substring(0,80)}`);
+    boldText += `(${line}) Tj\n0 -16 Td\n`;
+  });
+  boldText += 'ET';
+  pages.push(boldText);
+
+  // Page 5: Scavenger
+  let scavText = 'BT\n/F1 16 Tf\n50 780 Td\n(Scavenger Hunt) Tj\n/F1 14 Tf\n0 -30 Td\n(Night Out) Tj\n/F1 10 Tf\n0 -20 Td\n';
+  SCAV_NIGHT.forEach((s,i)=>{
+    const line = pdfStr(`${i+1}. ${s.substring(0,80)}`);
+    scavText += `(${line}) Tj\n0 -16 Td\n`;
+  });
+  scavText += '/F1 14 Tf\n0 -10 Td\n(At Home) Tj\n/F1 10 Tf\n0 -20 Td\n';
+  SCAV_HOME.forEach((s,i)=>{
+    const line = pdfStr(`${i+1}. ${s.substring(0,80)}`);
+    scavText += `(${line}) Tj\n0 -16 Td\n`;
+  });
+  scavText += 'ET';
+  pages.push(scavText);
+
+  // Build PDF binary
+  let out = '%PDF-1.4\n';
+  const offsets = [];
+
+  function writeObj(id, content){
+    offsets[id] = out.length;
+    out += `${id} 0 obj\n${content}\nendobj\n`;
+  }
+
+  // Font object (ID 1)
+  writeObj(1, '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>');
+
+  // Resources object (ID 2)
+  writeObj(2, '<< /Font << /F1 1 0 R >> >>');
+
+  // Content streams (IDs 3..3+pages.length-1)
+  const baseId = 3;
+  pages.forEach((pg, i)=>{
+    const bytes = pg.length;
+    writeObj(baseId+i, `<< /Length ${bytes} >>\nstream\n${pg}\nendstream`);
+  });
+
+  // Page objects
+  const pageBaseId = baseId + pages.length;
+  const pageParentId = pageBaseId + pages.length;
+
+  pages.forEach((pg, i)=>{
+    writeObj(pageBaseId+i, `<< /Type /Page /Parent ${pageParentId} 0 R /MediaBox [0 0 612 792] /Contents ${baseId+i} 0 R /Resources ${2} 0 R >>`);
+  });
+
+  // Pages dict
+  const pageRefs = pages.map((_,i)=>`${pageBaseId+i} 0 R`).join(' ');
+  writeObj(pageParentId, `<< /Type /Pages /Kids [${pageRefs}] /Count ${pages.length} >>`);
+
+  // Catalog
+  const catalogId = pageParentId+1;
+  writeObj(catalogId, `<< /Type /Catalog /Pages ${pageParentId} 0 R >>`);
+
+  // xref
+  const xrefOffset = out.length;
+  const maxId = catalogId;
+  out += 'xref\n';
+  out += `0 ${maxId+1}\n`;
+  out += '0000000000 65535 f \n';
+  for(let id=1;id<=maxId;id++){
+    out += (offsets[id]||0).toString().padStart(10,'0') + ' 00000 n \n';
+  }
+  out += 'trailer\n';
+  out += `<< /Size ${maxId+1} /Root ${catalogId} 0 R >>\n`;
+  out += 'startxref\n';
+  out += xrefOffset + '\n';
+  out += '%%EOF';
+
+  return out;
+}
+
+// ==================== UTILITIES ====================
+
+function shuffleArray(arr){
+  for(let i=arr.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [arr[i],arr[j]]=[arr[j],arr[i]];
+  }
+  return arr;
+}
+
+function capitalise(s){ return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; }
+
+function esc(s){
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ==================== START ====================
+
+init();
+drawWheel();
+
+})();
+</script>
+</body>
+</html>
