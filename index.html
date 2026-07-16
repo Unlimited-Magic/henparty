@@ -475,7 +475,10 @@ footer{
 </div>
 
 <script>
-(function(){
+/* App code runs at top level (NOT inside an IIFE) so the inline onclick="fn()" handlers
+   in the markup resolve to these functions. Wrapping this block in an IIFE without
+   exposing every handler on window silently kills every button (age gate, unlock, games)
+   — the site loads but nothing responds. Verified in a real browser via e2e/test.js. */
 // ==================== DATA ====================
 
 const DRINK_IF = [
@@ -1377,8 +1380,6 @@ function esc(s){
 
 init();
 drawWheel();
-
-})();
 </script>
 </body>
 </html>
