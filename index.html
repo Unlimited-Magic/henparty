@@ -663,9 +663,56 @@ let state = {
   spinning: false
 };
 
+// ==================== AMBASSADOR ATTRIBUTION (RAIL×ESTATE, additive) ====================
+// ?amb=CODE -> localStorage first-touch (never overwritten) + a track beacon to the
+// shared till. Device id is generated once and persisted so the purchase-time join
+// (via client_reference_id on the Stripe Payment Link) can find this device again.
+function ambDeviceId(){
+  var KEY = 'henparty.device_id';
+  var id = localStorage.getItem(KEY);
+  if(!id){
+    id = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : ('d-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2,10));
+    try{ localStorage.setItem(KEY, id); }catch(e){}
+  }
+  return id;
+}
+function ambCapture(){
+  try{
+    var params = new URLSearchParams(window.location.search);
+    var code = params.get('amb');
+    if(code){
+      var u = new URL(window.location.href);
+      u.searchParams.delete('amb');
+      history.replaceState({}, '', u.toString());
+      if(!localStorage.getItem('henparty.amb')){
+        localStorage.setItem('henparty.amb', code);
+      }
+    }
+    var stored = localStorage.getItem('henparty.amb');
+    if(stored){
+      fetch('https://orchard.defimagic.io/api/till/amb/track', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ device_id: ambDeviceId(), amb_code: stored })
+      }).catch(function(){});
+    }
+  }catch(e){}
+}
+function wireCheckoutLink(){
+  var link = document.getElementById('payment-link');
+  if(!link) return;
+  var base = link.getAttribute('href');
+  if(!base || base.indexOf('client_reference_id=') !== -1) return;
+  var sep = base.indexOf('?') === -1 ? '?' : '&';
+  link.href = base + sep + 'client_reference_id=' + encodeURIComponent(ambDeviceId());
+}
+
 // ==================== INIT ====================
 
 function init(){
+  ambCapture();
+  wireCheckoutLink();
+
   // Check stored till token (till_henparty = session_id.hmac set by unlock.html)
   const tillToken = localStorage.getItem('till_henparty');
   if(tillToken){
